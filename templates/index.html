@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#e4eefc">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0b1730">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="FreeZer">
+<title>FreeZer</title>
+<script>
+  // Apply the saved theme before first paint so the page never flashes.
+  try {
+    const t = localStorage.getItem('freezer-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+  } catch (e) {}
+</script>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='icons/favicon-32.png') }}">
+<link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='icons/apple-touch-icon.png') }}">
+<link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><span class="logo">🧊</span><h1>FreeZer</h1></div>
+  <div class="stats" id="stats"></div>
+  <div class="theme-switch" id="theme-switch" role="radiogroup" aria-label="Theme">
+    <button type="button" data-theme="system" title="Follow system theme">Auto</button>
+    <button type="button" data-theme="light" title="Light theme">☀️</button>
+    <button type="button" data-theme="dark" title="Dark theme">🌙</button>
+  </div>
+</header>
+
+<main>
+  <section class="panel">
+    <button class="add-toggle" id="add-toggle" aria-expanded="false">
+      <span class="plus">+</span> Add something to the freezer
+    </button>
+    <form id="add-form" class="item-form" hidden>
+      <div class="grid">
+        <label class="field span2">
+          <span>What is it?</span>
+          <input name="name" id="f-name" placeholder="e.g. Bolognese sauce" required autocomplete="off">
+        </label>
+        <label class="field">
+          <span>Category</span>
+          <select name="category" id="f-category"></select>
+        </label>
+        <label class="field">
+          <span>Where</span>
+          <select name="location_id" id="f-location"></select>
+        </label>
+        <label class="field small">
+          <span>Amount</span>
+          <input name="amount" id="f-amount" type="number" min="0.01" step="any" value="1" required>
+        </label>
+        <label class="field small">
+          <span>Unit</span>
+          <select name="unit" id="f-unit"></select>
+        </label>
+        <label class="field">
+          <span>Frozen on</span>
+          <input name="frozen_on" id="f-frozen" type="date" required>
+        </label>
+        <label class="field">
+          <span>Best before <em id="f-hint"></em></span>
+          <input name="best_before" id="f-best" type="date">
+        </label>
+        <label class="field span2">
+          <span>Notes <em>optional</em></span>
+          <input name="notes" id="f-notes" placeholder="e.g. 2 portions, mild, from Sunday batch" autocomplete="off">
+        </label>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="primary">Freeze it</button>
+        <button type="button" class="ghost" id="add-cancel">Cancel</button>
+        <span class="form-error" id="add-error"></span>
+      </div>
+    </form>
+  </section>
+
+  <section class="toolbar">
+    <input type="search" id="search" placeholder="Search items…" autocomplete="off">
+    <select id="filter-location"><option value="">All locations</option></select>
+    <select id="filter-state">
+      <option value="">Any condition</option>
+      <option value="expired">Past best before</option>
+      <option value="soon">Use soon</option>
+      <option value="ok">Still good</option>
+    </select>
+    <div class="tabs">
+      <button class="tab active" data-status="active">In freezer</button>
+      <button class="tab" data-status="history">History</button>
+    </div>
+    <button class="ghost" id="manage-locations">Locations</button>
+  </section>
+
+  <section id="list" class="list"></section>
+</main>
+
+<dialog id="locations-dialog">
+  <h2>Locations</h2>
+  <ul id="locations-list" class="locations"></ul>
+  <form id="location-form" class="loc-add">
+    <input id="location-name" placeholder="New location, e.g. Door shelf" required autocomplete="off">
+    <button class="primary" type="submit">Add</button>
+  </form>
+  <p class="hint">Deleting a location keeps its items — they just become unassigned.</p>
+  <div class="form-actions"><button class="ghost" id="locations-close">Close</button></div>
+</dialog>
+
+<dialog id="edit-dialog">
+  <h2>Edit item</h2>
+  <form id="edit-form" class="item-form">
+    <div class="grid">
+      <label class="field span2"><span>Name</span><input name="name" required autocomplete="off"></label>
+      <label class="field"><span>Category</span><select name="category" data-categories></select></label>
+      <label class="field"><span>Where</span><select name="location_id" data-locations></select></label>
+      <label class="field small"><span>Amount</span><input name="amount" type="number" min="0" step="any" required></label>
+      <label class="field small"><span>Unit</span><select name="unit" data-units></select></label>
+      <label class="field"><span>Frozen on</span><input name="frozen_on" type="date" required></label>
+      <label class="field"><span>Best before</span><input name="best_before" type="date"></label>
+      <label class="field span2"><span>Notes</span><input name="notes" autocomplete="off"></label>
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="primary">Save</button>
+      <button type="button" class="ghost" id="edit-cancel">Cancel</button>
+      <button type="button" class="danger-ghost" id="edit-delete">Delete permanently</button>
+      <span class="form-error" id="edit-error"></span>
+    </div>
+  </form>
+</dialog>
+
+<div id="toast" class="toast" hidden></div>
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
