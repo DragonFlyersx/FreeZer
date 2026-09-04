@@ -1,0 +1,14 @@
+.git
+.github
+.venv
+__pycache__
+*.pyc
+freezer.db*
+*.db-wal
+*.db-shm
+scripts
+run.sh
+README.md
+.gitignore
+.dockerignore
+docker-compose.yml

@@ -1,0 +1,14 @@
+{
+  "name": "FreeZer",
+  "short_name": "FreeZer",
+  "description": "What's in the freezer, and how fresh it still is.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#e4eefc",
+  "theme_color": "#0e7c86",
+  "icons": [
+    { "src": "/static/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/static/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

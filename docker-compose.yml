@@ -1,0 +1,13 @@
+services:
+  freezer:
+    image: ghcr.io/dragonflyersx/freezer:latest
+    build: .
+    container_name: freezer
+    ports:
+      - "5177:5177"
+    volumes:
+      - freezer-data:/data
+    restart: unless-stopped
+
+volumes:
+  freezer-data:
