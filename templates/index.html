@@ -1,12 +1,12 @@
 <!doctype html>
-<html lang="en">
+<html lang="da">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" media="(prefers-color-scheme: light)" content="#e4eefc">
-<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0b1730">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#1f3e8c">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0c1630">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="FreeZer">
 <title>FreeZer</title>
 <script>
@@ -22,117 +22,119 @@
 <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
 </head>
 <body>
-<header class="topbar">
-  <div class="brand"><span class="logo">🧊</span><h1>FreeZer</h1></div>
-  <div class="stats" id="stats"></div>
-  <div class="theme-switch" id="theme-switch" role="radiogroup" aria-label="Theme">
-    <button type="button" data-theme="system" title="Follow system theme">Auto</button>
-    <button type="button" data-theme="light" title="Light theme">☀️</button>
-    <button type="button" data-theme="dark" title="Dark theme">🌙</button>
+<header class="band">
+  <div class="band-inner">
+    <h1>FreeZer</h1>
+    <p class="summary" id="stats"></p>
+    <button class="add-button" id="add-open"><span aria-hidden="true">+</span> Læg noget i fryseren</button>
   </div>
 </header>
 
 <main>
-  <section class="panel">
-    <button class="add-toggle" id="add-toggle" aria-expanded="false">
-      <span class="plus">+</span> Add something to the freezer
-    </button>
-    <form id="add-form" class="item-form" hidden>
-      <div class="grid">
-        <label class="field span2">
-          <span>What is it?</span>
-          <input name="name" id="f-name" placeholder="e.g. Bolognese sauce" required autocomplete="off">
-        </label>
-        <label class="field">
-          <span>Category</span>
-          <select name="category" id="f-category"></select>
-        </label>
-        <label class="field">
-          <span>Where</span>
-          <select name="location_id" id="f-location"></select>
-        </label>
-        <label class="field small">
-          <span>Amount</span>
-          <input name="amount" id="f-amount" type="number" min="0.01" step="any" value="1" required>
-        </label>
-        <label class="field small">
-          <span>Unit</span>
-          <select name="unit" id="f-unit"></select>
-        </label>
-        <label class="field">
-          <span>Frozen on</span>
-          <input name="frozen_on" id="f-frozen" type="date" required>
-        </label>
-        <label class="field">
-          <span>Best before <em id="f-hint"></em></span>
-          <input name="best_before" id="f-best" type="date">
-        </label>
-        <label class="field span2">
-          <span>Notes <em>optional</em></span>
-          <input name="notes" id="f-notes" placeholder="e.g. 2 portions, mild, from Sunday batch" autocomplete="off">
-        </label>
-      </div>
-      <div class="form-actions">
-        <button type="submit" class="primary">Freeze it</button>
-        <button type="button" class="ghost" id="add-cancel">Cancel</button>
-        <span class="form-error" id="add-error"></span>
-      </div>
-    </form>
-  </section>
-
   <section class="toolbar">
-    <input type="search" id="search" placeholder="Search items…" autocomplete="off">
-    <select id="filter-location"><option value="">All locations</option></select>
-    <select id="filter-state">
-      <option value="">Any condition</option>
-      <option value="expired">Past best before</option>
-      <option value="soon">Use soon</option>
-      <option value="ok">Still good</option>
-    </select>
-    <div class="tabs">
-      <button class="tab active" data-status="active">In freezer</button>
-      <button class="tab" data-status="history">History</button>
+    <input type="search" id="search" placeholder="Søg efter en vare" aria-label="Søg" autocomplete="off">
+    <div class="tabs" role="tablist">
+      <button class="tab active" data-status="active">I fryseren</button>
+      <button class="tab" data-status="history">Brugt og smidt ud</button>
     </div>
-    <button class="ghost" id="manage-locations">Locations</button>
   </section>
 
   <section id="list" class="list"></section>
 </main>
 
+<footer class="foot">
+  <button class="link" id="manage-locations">Ret pladser i fryseren</button>
+  <div class="theme-switch" id="theme-switch" role="radiogroup" aria-label="Farver">
+    <button type="button" data-theme="system">Auto</button>
+    <button type="button" data-theme="light">Lys</button>
+    <button type="button" data-theme="dark">Mørk</button>
+  </div>
+</footer>
+
+<dialog id="add-dialog">
+  <h2>Læg noget i fryseren</h2>
+  <form id="add-form" class="item-form">
+    <label class="field">
+      <span>Hvad er det?</span>
+      <input name="name" id="f-name" placeholder="f.eks. kødsovs" required autocomplete="off">
+    </label>
+    <label class="field">
+      <span>Slags</span>
+      <select name="category" id="f-category"></select>
+    </label>
+    <div class="row">
+      <div class="field">
+        <span>Hvor mange?</span>
+        <div class="stepper">
+          <button type="button" data-step="-1" aria-label="Færre">−</button>
+          <input name="amount" id="f-amount" type="number" inputmode="decimal" min="0.01" step="any" value="1" required aria-label="Mængde">
+          <button type="button" data-step="1" aria-label="Flere">+</button>
+        </div>
+      </div>
+      <label class="field">
+        <span>Enhed</span>
+        <select name="unit" id="f-unit"></select>
+      </label>
+    </div>
+    <label class="field">
+      <span>Hvor i fryseren?</span>
+      <select name="location_id" id="f-location"></select>
+    </label>
+    <details class="more">
+      <summary>Datoer og noter <span id="f-hint"></span></summary>
+      <div class="row">
+        <label class="field"><span>Frosset den</span><input name="frozen_on" id="f-frozen" type="date" required></label>
+        <label class="field"><span>Bedst før</span><input name="best_before" id="f-best" type="date"></label>
+      </div>
+      <label class="field">
+        <span>Noter</span>
+        <input name="notes" id="f-notes" placeholder="f.eks. fra søndagens gryde" autocomplete="off">
+      </label>
+    </details>
+    <p class="form-error" id="add-error"></p>
+    <div class="form-actions">
+      <button type="submit" class="primary">Læg i fryseren</button>
+      <button type="button" class="secondary" id="add-cancel">Annuller</button>
+    </div>
+  </form>
+</dialog>
+
 <dialog id="locations-dialog">
-  <h2>Locations</h2>
+  <h2>Pladser i fryseren</h2>
   <ul id="locations-list" class="locations"></ul>
   <form id="location-form" class="loc-add">
-    <input id="location-name" placeholder="New location, e.g. Door shelf" required autocomplete="off">
-    <button class="primary" type="submit">Add</button>
+    <input id="location-name" placeholder="Ny plads, f.eks. lågen" aria-label="Ny plads" required autocomplete="off">
+    <button class="primary" type="submit">Tilføj</button>
   </form>
-  <p class="hint">Deleting a location keeps its items — they just become unassigned.</p>
-  <div class="form-actions"><button class="ghost" id="locations-close">Close</button></div>
+  <p class="hint">Sletter du en plads, bliver varerne i fryseren. De står bare uden plads.</p>
+  <div class="form-actions"><button class="secondary" id="locations-close">Luk</button></div>
 </dialog>
 
 <dialog id="edit-dialog">
-  <h2>Edit item</h2>
+  <h2>Ret vare</h2>
   <form id="edit-form" class="item-form">
-    <div class="grid">
-      <label class="field span2"><span>Name</span><input name="name" required autocomplete="off"></label>
-      <label class="field"><span>Category</span><select name="category" data-categories></select></label>
-      <label class="field"><span>Where</span><select name="location_id" data-locations></select></label>
-      <label class="field small"><span>Amount</span><input name="amount" type="number" min="0" step="any" required></label>
-      <label class="field small"><span>Unit</span><select name="unit" data-units></select></label>
-      <label class="field"><span>Frozen on</span><input name="frozen_on" type="date" required></label>
-      <label class="field"><span>Best before</span><input name="best_before" type="date"></label>
-      <label class="field span2"><span>Notes</span><input name="notes" autocomplete="off"></label>
+    <label class="field"><span>Navn</span><input name="name" required autocomplete="off"></label>
+    <label class="field"><span>Slags</span><select name="category" data-categories></select></label>
+    <div class="row">
+      <label class="field"><span>Mængde</span><input name="amount" type="number" inputmode="decimal" min="0" step="any" required></label>
+      <label class="field"><span>Enhed</span><select name="unit" data-units></select></label>
     </div>
+    <label class="field"><span>Hvor i fryseren?</span><select name="location_id" data-locations></select></label>
+    <div class="row">
+      <label class="field"><span>Frosset den</span><input name="frozen_on" type="date" required></label>
+      <label class="field"><span>Bedst før</span><input name="best_before" type="date"></label>
+    </div>
+    <label class="field"><span>Noter</span><input name="notes" autocomplete="off"></label>
+    <p class="form-error" id="edit-error"></p>
     <div class="form-actions">
-      <button type="submit" class="primary">Save</button>
-      <button type="button" class="ghost" id="edit-cancel">Cancel</button>
-      <button type="button" class="danger-ghost" id="edit-delete">Delete permanently</button>
-      <span class="form-error" id="edit-error"></span>
+      <button type="submit" class="primary">Gem</button>
+      <button type="button" class="secondary" id="edit-cancel">Annuller</button>
+      <button type="button" class="danger" id="edit-delete">Slet for altid</button>
     </div>
   </form>
 </dialog>
 
-<div id="toast" class="toast" hidden></div>
+<div id="toast" class="toast" role="status" hidden></div>
 <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
 </html>

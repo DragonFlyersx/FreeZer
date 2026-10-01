@@ -1,12 +1,12 @@
 {
   "name": "FreeZer",
   "short_name": "FreeZer",
-  "description": "What's in the freezer, and how fresh it still is.",
+  "description": "Hvad er der i fryseren, og hvor frisk er det.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#e4eefc",
-  "theme_color": "#0e7c86",
+  "background_color": "#f6f8fb",
+  "theme_color": "#1f3e8c",
   "icons": [
     { "src": "/static/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "/static/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
