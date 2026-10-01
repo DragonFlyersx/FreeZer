@@ -23,33 +23,33 @@ DB_PATH = os.environ.get("FREEZER_DB") or os.path.join(
 # Rule-of-thumb freezer shelf life at -18 C, in months. Used to pre-fill the
 # best-before date when an item is added; always overridable per item.
 CATEGORIES: list[dict] = [
-    {"name": "Beef / lamb (steaks, roasts)", "months": 12},
-    {"name": "Pork (chops, roasts)", "months": 6},
-    {"name": "Ground meat", "months": 4},
-    {"name": "Poultry, whole", "months": 12},
-    {"name": "Poultry, pieces", "months": 9},
-    {"name": "Bacon / sausages / cured", "months": 2},
-    {"name": "Cooked meat & leftovers", "months": 3},
-    {"name": "Fish, lean (cod, haddock)", "months": 6},
-    {"name": "Fish, fatty (salmon, mackerel)", "months": 3},
-    {"name": "Shellfish / prawns", "months": 6},
-    {"name": "Vegetables", "months": 12},
-    {"name": "Fruit & berries", "months": 12},
-    {"name": "Herbs", "months": 6},
-    {"name": "Bread & baked goods", "months": 3},
-    {"name": "Dough & pastry", "months": 3},
-    {"name": "Butter & cream", "months": 9},
-    {"name": "Cheese, hard", "months": 6},
-    {"name": "Soup, stew & sauce", "months": 3},
-    {"name": "Ready meals", "months": 3},
-    {"name": "Stock / broth", "months": 6},
-    {"name": "Ice cream", "months": 2},
-    {"name": "Nuts & seeds", "months": 6},
-    {"name": "Other", "months": 6},
+    {"name": "Okse / lam (bøffer, steg)", "months": 12},
+    {"name": "Svin (koteletter, steg)", "months": 6},
+    {"name": "Hakket kød", "months": 4},
+    {"name": "Fjerkræ, hel", "months": 12},
+    {"name": "Fjerkræ, stykker", "months": 9},
+    {"name": "Bacon / pølser / pålæg", "months": 2},
+    {"name": "Tilberedt kød & rester", "months": 3},
+    {"name": "Fisk, mager (torsk, kuller)", "months": 6},
+    {"name": "Fisk, fed (laks, makrel)", "months": 3},
+    {"name": "Skaldyr / rejer", "months": 6},
+    {"name": "Grøntsager", "months": 12},
+    {"name": "Frugt & bær", "months": 12},
+    {"name": "Krydderurter", "months": 6},
+    {"name": "Brød & bagværk", "months": 3},
+    {"name": "Dej", "months": 3},
+    {"name": "Smør & fløde", "months": 9},
+    {"name": "Ost, hård", "months": 6},
+    {"name": "Suppe, gryderet & sovs", "months": 3},
+    {"name": "Færdigretter", "months": 3},
+    {"name": "Fond / bouillon", "months": 6},
+    {"name": "Is", "months": 2},
+    {"name": "Nødder & kerner", "months": 6},
+    {"name": "Andet", "months": 6},
 ]
 CATEGORY_MONTHS = {c["name"]: c["months"] for c in CATEGORIES}
 
-UNITS = ["portions", "pcs", "g", "kg", "ml", "l", "bags", "packs"]
+UNITS = ["portioner", "stk", "g", "kg", "ml", "l", "poser", "pakker"]
 
 # Items within this many days of their best-before date count as "use soon".
 SOON_DAYS = 21
@@ -93,7 +93,38 @@ CREATE INDEX IF NOT EXISTS idx_items_best_before ON items(best_before);
 CREATE INDEX IF NOT EXISTS idx_events_item ON events(item_id);
 """
 
-DEFAULT_LOCATIONS = ["Top drawer", "Middle drawer", "Bottom drawer"]
+# Databases created before the Danish translation still hold English values.
+ENGLISH_TO_DANISH = {
+    "Beef / lamb (steaks, roasts)": "Okse / lam (bøffer, steg)",
+    "Pork (chops, roasts)": "Svin (koteletter, steg)",
+    "Ground meat": "Hakket kød",
+    "Poultry, whole": "Fjerkræ, hel",
+    "Poultry, pieces": "Fjerkræ, stykker",
+    "Bacon / sausages / cured": "Bacon / pølser / pålæg",
+    "Cooked meat & leftovers": "Tilberedt kød & rester",
+    "Fish, lean (cod, haddock)": "Fisk, mager (torsk, kuller)",
+    "Fish, fatty (salmon, mackerel)": "Fisk, fed (laks, makrel)",
+    "Shellfish / prawns": "Skaldyr / rejer",
+    "Vegetables": "Grøntsager",
+    "Fruit & berries": "Frugt & bær",
+    "Herbs": "Krydderurter",
+    "Bread & baked goods": "Brød & bagværk",
+    "Dough & pastry": "Dej",
+    "Butter & cream": "Smør & fløde",
+    "Cheese, hard": "Ost, hård",
+    "Soup, stew & sauce": "Suppe, gryderet & sovs",
+    "Ready meals": "Færdigretter",
+    "Stock / broth": "Fond / bouillon",
+    "Ice cream": "Is",
+    "Nuts & seeds": "Nødder & kerner",
+    "Other": "Andet",
+    "portions": "portioner",
+    "pcs": "stk",
+    "bags": "poser",
+    "packs": "pakker",
+}
+
+DEFAULT_LOCATIONS = ["Øverste skuffe", "Midterste skuffe", "Nederste skuffe"]
 
 app = Flask(__name__)
 
@@ -125,6 +156,9 @@ def init_db() -> None:
             "INSERT INTO locations (name, sort_order) VALUES (?, ?)",
             [(n, i) for i, n in enumerate(DEFAULT_LOCATIONS)],
         )
+    for en, da in ENGLISH_TO_DANISH.items():
+        conn.execute("UPDATE items SET category = ? WHERE category = ?", (da, en))
+        conn.execute("UPDATE items SET unit = ? WHERE unit = ?", (da, en))
     conn.commit()
     conn.close()
 
@@ -283,16 +317,16 @@ def api_create_item():
     data = payload()
     name = (data.get("name") or "").strip()
     if not name:
-        raise BadRequest("Name is required")
+        raise BadRequest("Navn mangler")
 
-    category = data.get("category") or "Other"
+    category = data.get("category") or "Andet"
     if category not in CATEGORY_MONTHS:
-        category = "Other"
+        category = "Andet"
 
     today = date.today()
     frozen_on = parse_date(data.get("frozen_on"), today)
     if frozen_on > today:
-        raise BadRequest("Frozen-on date cannot be in the future")
+        raise BadRequest("Indfrysningsdatoen kan ikke ligge i fremtiden")
 
     best_before = parse_date(data.get("best_before"))
     if best_before is None:
@@ -302,11 +336,11 @@ def api_create_item():
     try:
         amount = 1.0 if raw_amount in (None, "") else float(raw_amount)
     except (TypeError, ValueError):
-        raise BadRequest("Amount must be a number")
+        raise BadRequest("Mængden skal være et tal")
     if amount <= 0:
-        raise BadRequest("Amount must be greater than zero")
+        raise BadRequest("Mængden skal være større end nul")
 
-    unit = (data.get("unit") or "portions").strip() or "portions"
+    unit = (data.get("unit") or "portioner").strip() or "portioner"
     location_id = data.get("location_id") or None
 
     db = get_db()
@@ -337,7 +371,7 @@ def api_update_item(item_id: int):
     db = get_db()
     row = fetch_item(db, item_id)
     if row is None:
-        return jsonify({"error": "Item not found"}), 404
+        return jsonify({"error": "Varen findes ikke"}), 404
 
     data = payload()
     fields: dict = {}
@@ -345,39 +379,39 @@ def api_update_item(item_id: int):
     if "name" in data:
         name = (data["name"] or "").strip()
         if not name:
-            raise BadRequest("Name is required")
+            raise BadRequest("Navn mangler")
         fields["name"] = name
     if "category" in data:
         fields["category"] = (
-            data["category"] if data["category"] in CATEGORY_MONTHS else "Other"
+            data["category"] if data["category"] in CATEGORY_MONTHS else "Andet"
         )
     if "location_id" in data:
         fields["location_id"] = data["location_id"] or None
     if "unit" in data:
-        fields["unit"] = (data["unit"] or "portions").strip() or "portions"
+        fields["unit"] = (data["unit"] or "portioner").strip() or "portioner"
     if "notes" in data:
         fields["notes"] = (data["notes"] or "").strip()
     if "amount" in data:
         try:
             amount = float(data["amount"])
         except (TypeError, ValueError):
-            raise BadRequest("Amount must be a number")
+            raise BadRequest("Mængden skal være et tal")
         if amount < 0:
-            raise BadRequest("Amount cannot be negative")
+            raise BadRequest("Mængden kan ikke være negativ")
         fields["amount"] = amount
         if amount > row["initial_amount"]:
             fields["initial_amount"] = amount
     if "frozen_on" in data:
         frozen = parse_date(data["frozen_on"])
         if frozen is None:
-            raise BadRequest("Invalid frozen-on date")
+            raise BadRequest("Ugyldig indfrysningsdato")
         fields["frozen_on"] = frozen.isoformat()
     if "best_before" in data:
         bb = parse_date(data["best_before"])
         fields["best_before"] = bb.isoformat() if bb else None
     if "status" in data:
         if data["status"] not in ("active", "used", "discarded"):
-            raise BadRequest("Unknown status")
+            raise BadRequest("Ukendt status")
         fields["status"] = data["status"]
         fields["closed_at"] = (
             None if data["status"] == "active" else datetime.now().isoformat(" ", "seconds")
@@ -400,16 +434,16 @@ def api_take(item_id: int):
     db = get_db()
     row = fetch_item(db, item_id)
     if row is None:
-        return jsonify({"error": "Item not found"}), 404
+        return jsonify({"error": "Varen findes ikke"}), 404
 
     data = payload()
     raw = data.get("amount")
     try:
         amount = float(row["amount"] if raw in (None, "") else raw)
     except (TypeError, ValueError):
-        raise BadRequest("Amount must be a number")
+        raise BadRequest("Mængden skal være et tal")
     if amount <= 0:
-        raise BadRequest("Amount must be greater than zero")
+        raise BadRequest("Mængden skal være større end nul")
 
     remaining = max(0.0, round(row["amount"] - amount, 3))
     taken = round(row["amount"] - remaining, 3)
@@ -431,7 +465,7 @@ def api_discard(item_id: int):
     db = get_db()
     row = fetch_item(db, item_id)
     if row is None:
-        return jsonify({"error": "Item not found"}), 404
+        return jsonify({"error": "Varen findes ikke"}), 404
     db.execute(
         """UPDATE items SET status = 'discarded', amount = 0,
            updated_at = datetime('now'), closed_at = datetime('now') WHERE id = ?""",
@@ -448,7 +482,7 @@ def api_restore(item_id: int):
     db = get_db()
     row = fetch_item(db, item_id)
     if row is None:
-        return jsonify({"error": "Item not found"}), 404
+        return jsonify({"error": "Varen findes ikke"}), 404
     amount = row["amount"] if row["amount"] > 0 else row["initial_amount"]
     db.execute(
         """UPDATE items SET status = 'active', amount = ?, closed_at = NULL,
@@ -467,7 +501,7 @@ def api_delete_item(item_id: int):
     cur = db.execute("DELETE FROM items WHERE id = ?", (item_id,))
     db.commit()
     if cur.rowcount == 0:
-        return jsonify({"error": "Item not found"}), 404
+        return jsonify({"error": "Varen findes ikke"}), 404
     return jsonify({"deleted": item_id})
 
 
@@ -483,7 +517,7 @@ def api_history(item_id: int):
 
 @app.get("/api/suggest-best-before")
 def api_suggest():
-    category = request.args.get("category", "Other")
+    category = request.args.get("category", "Andet")
     frozen_on = parse_date(request.args.get("frozen_on"), date.today())
     return jsonify(
         {
@@ -510,7 +544,7 @@ def api_locations():
 def api_create_location():
     name = (payload().get("name") or "").strip()
     if not name:
-        raise BadRequest("Location name is required")
+        raise BadRequest("Pladsen skal have et navn")
     db = get_db()
     try:
         cur = db.execute(
@@ -519,7 +553,7 @@ def api_create_location():
             (name,),
         )
     except sqlite3.IntegrityError:
-        raise BadRequest(f"'{name}' already exists")
+        raise BadRequest(f"'{name}' findes allerede")
     db.commit()
     return jsonify({"id": cur.lastrowid, "name": name, "item_count": 0}), 201
 
@@ -528,15 +562,15 @@ def api_create_location():
 def api_rename_location(loc_id: int):
     name = (payload().get("name") or "").strip()
     if not name:
-        raise BadRequest("Location name is required")
+        raise BadRequest("Pladsen skal have et navn")
     db = get_db()
     try:
         cur = db.execute("UPDATE locations SET name = ? WHERE id = ?", (name, loc_id))
     except sqlite3.IntegrityError:
-        raise BadRequest(f"'{name}' already exists")
+        raise BadRequest(f"'{name}' findes allerede")
     db.commit()
     if cur.rowcount == 0:
-        return jsonify({"error": "Location not found"}), 404
+        return jsonify({"error": "Pladsen findes ikke"}), 404
     return jsonify({"id": loc_id, "name": name})
 
 
@@ -547,7 +581,7 @@ def api_delete_location(loc_id: int):
     cur = db.execute("DELETE FROM locations WHERE id = ?", (loc_id,))
     db.commit()
     if cur.rowcount == 0:
-        return jsonify({"error": "Location not found"}), 404
+        return jsonify({"error": "Pladsen findes ikke"}), 404
     return jsonify({"deleted": loc_id})
 
 
@@ -563,8 +597,8 @@ def api_stats():
     counts = {r["status"]: r["n"] for r in closed}
     by_location: dict[str, int] = {}
     for i in items:
-        by_location[i["location"] or "Unassigned"] = (
-            by_location.get(i["location"] or "Unassigned", 0) + 1
+        by_location[i["location"] or "Uden plads"] = (
+            by_location.get(i["location"] or "Uden plads", 0) + 1
         )
     return jsonify(
         {

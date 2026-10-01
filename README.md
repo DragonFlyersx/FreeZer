@@ -86,7 +86,7 @@ per browser.
 | `templates/index.html` | The single page |
 | `static/app.js` | Frontend logic (vanilla JS, no framework) |
 | `static/style.css` | Styling ("Glacier": frosted glass on an icy gradient), light + dark |
-| `static/fonts/` | Sora, self-hosted so nothing is fetched from the internet |
+| `static/fonts/` | Atkinson Hyperlegible Next, self-hosted so nothing is fetched from the internet |
 | `static/icons/`, `static/manifest.webmanifest` | Home-screen icon and PWA manifest (regenerate icons with `scripts/make_icons.py`) |
 | `freezer.db` | Your data (git-ignored) |
 | `Dockerfile`, `docker-compose.yml` | Container image (gunicorn) and one-command server setup |
