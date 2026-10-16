@@ -144,6 +144,10 @@ input:focus, select:focus { outline: none; border-color: var(--cobalt); }
 /* ----------------------------------------------------------------- toolbar */
 .toolbar { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
 .toolbar input[type=search] { flex: 1 1 260px; }
+.sort { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.sort select, .sort button { width: auto; min-height: 44px; font-size: 15px; }
+.sort select { padding: 6px 10px; }
+.sort button { padding: 0 14px; white-space: nowrap; }
 .tabs {
   display: flex; background: var(--sunk); border-radius: 999px; padding: 4px;
 }
