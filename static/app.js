@@ -6,6 +6,8 @@ const state = {
   items: [],
   tab: 'active',
   search: '',
+  sortBy: 'best',   // best | frozen | name; 'best' keeps the spoilage groups
+  sortDesc: false,
   takingId: null,   // item whose inline "take" row is open
   editingId: null,
 };
@@ -181,6 +183,27 @@ const GROUPS = [
   ['unknown', 'Uden dato'],
 ];
 
+const SORT_KEY = 'freezer-sort';
+const SORT_LABELS = {
+  best: ['↑ Først udløbne øverst', '↓ Længst holdbare øverst'],
+  frozen: ['↑ Ældste øverst', '↓ Nyeste øverst'],
+  name: ['↑ A til Å', '↓ Å til A'],
+};
+
+function compareItems(a, b) {
+  let c;
+  if (state.sortBy === 'name') c = a.name.localeCompare(b.name, 'da', { sensitivity: 'base' });
+  else if (state.sortBy === 'frozen') c = a.frozen_on.localeCompare(b.frozen_on) || a.id - b.id;
+  else c = (a.best_before || '9999').localeCompare(b.best_before || '9999');
+  return state.sortDesc ? -c : c;
+}
+
+function saveSort() {
+  $('#sort-by').value = state.sortBy;
+  $('#sort-dir').textContent = SORT_LABELS[state.sortBy][state.sortDesc ? 1 : 0];
+  try { localStorage.setItem(SORT_KEY, JSON.stringify([state.sortBy, state.sortDesc])); } catch (e) { /* private mode */ }
+}
+
 function render() {
   renderStats();
   const items = visibleItems();
@@ -197,18 +220,17 @@ function render() {
     return;
   }
 
-  if (state.tab !== 'active') {
-    list.innerHTML = items
-      .slice()
-      .sort((a, b) => (b.closed_at || '').localeCompare(a.closed_at || ''))
-      .map(cardHtml)
-      .join('');
+  // History defaults to most recently closed; any other sort gives a flat list.
+  if (state.tab !== 'active' || state.sortBy !== 'best') {
+    const flat = state.tab !== 'active' && state.sortBy === 'best'
+      ? (a, b) => (b.closed_at || '').localeCompare(a.closed_at || '')
+      : compareItems;
+    list.innerHTML = items.slice().sort(flat).map(cardHtml).join('');
     return;
   }
 
-  const byDate = (a, b) => (a.best_before || '').localeCompare(b.best_before || '');
   list.innerHTML = GROUPS.map(([key, title]) => {
-    const group = items.filter((i) => i.state === key).sort(byDate);
+    const group = items.filter((i) => i.state === key).sort(compareItems);
     if (!group.length) return '';
     return `<h2 class="group-head ${key}">${title} <span>${plural(group.length, 'vare', 'varer')}</span></h2>`
       + group.map(cardHtml).join('');
@@ -415,6 +437,12 @@ function wire() {
     }
   });
 
+  try { [state.sortBy, state.sortDesc] = JSON.parse(localStorage.getItem(SORT_KEY)) || []; } catch (e) { /* ignore */ }
+  if (!SORT_LABELS[state.sortBy]) state.sortBy = 'best';
+  state.sortDesc = state.sortDesc === true;
+  saveSort();
+  $('#sort-by').addEventListener('change', (e) => { state.sortBy = e.target.value; saveSort(); render(); });
+  $('#sort-dir').addEventListener('click', () => { state.sortDesc = !state.sortDesc; saveSort(); render(); });
   $('#search').addEventListener('input', (e) => { state.search = e.target.value; render(); });
   $$('.tab').forEach((tab) => tab.addEventListener('click', () => {
     state.tab = tab.dataset.status;

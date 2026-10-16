@@ -33,6 +33,14 @@
 <main>
   <section class="toolbar">
     <input type="search" id="search" placeholder="Søg efter en vare" aria-label="Søg" autocomplete="off">
+    <div class="sort">
+      <select id="sort-by" aria-label="Sortér efter">
+        <option value="best">Holdbarhed</option>
+        <option value="frozen">Dato lagt i fryseren</option>
+        <option value="name">Navn (A-Å)</option>
+      </select>
+      <button class="secondary" id="sort-dir" type="button"></button>
+    </div>
     <div class="tabs" role="tablist">
       <button class="tab active" data-status="active">I fryseren</button>
       <button class="tab" data-status="history">Brugt og smidt ud</button>
